@@ -1,0 +1,61 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: books_db
+    environment:
+      POSTGRES_DB: books
+      POSTGRES_USER: yii
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-yiipass}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - books_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yii -d books"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: books_backend
+    environment:
+      DB_HOST: db
+      DB_NAME: books
+      DB_USER: yii
+      DB_PASSWORD: ${DB_PASSWORD:-yiipass}
+      DB_DSN: "pgsql:host=db;dbname=books"
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+      SMSPILOT_API_KEY: emulator
+      FRONTEND_URL: http://localhost:3000
+      YII_ENV: dev
+      YII_DEBUG: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    networks:
+      - books_network
+
+  frontend:
+    build: ./frontend
+    container_name: books_frontend
+    environment:
+      API_BASE_URL: http://backend:8080/api
+      PUBLIC_API_BASE_URL: http://localhost:8080/api
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    networks:
+      - books_network
+
+volumes:
+  db_data:
+
+networks:
+  books_network:
+    driver: bridge

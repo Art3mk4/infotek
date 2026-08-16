@@ -1,0 +1,7 @@
+.env
+vendor/
+runtime/
+public/assets/
+composer.lock
+*.log
+.DS_Store

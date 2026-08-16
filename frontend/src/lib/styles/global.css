@@ -1,0 +1,266 @@
+/*
+ * Design System: Library as Living Space
+ * Methodology: BEM (Block Element Modifier)
+ * Preprocessor: PostCSS with nesting
+ */
+
+* {
+	box-sizing: border-box;
+}
+
+:root {
+	/* Color palette - warm paper inspired */
+	--color-paper: #f9f6f1;
+	--color-ink: #2b2118;
+	--color-accent: #c84b31;
+	--color-accent-light: #d97652;
+	--color-muted: #8b7355;
+	--color-shelf: #4a3f35;
+
+	/* Typography */
+	--font-display: 'Playfair Display', Georgia, serif;
+	--font-body: 'Source Sans 3', -apple-system, system-ui, sans-serif;
+	--font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+
+	/* Spacing system */
+	--space-unit: 1.5rem;
+	--space-xs: calc(var(--space-unit) * 0.25);
+	--space-sm: calc(var(--space-unit) * 0.5);
+	--space-md: var(--space-unit);
+	--space-lg: calc(var(--space-unit) * 2);
+	--space-xl: calc(var(--space-unit) * 3);
+
+	/* Transitions */
+	--transition-fast: 0.15s ease;
+	--transition-base: 0.25s ease;
+	--transition-slow: 0.4s ease;
+}
+
+/* Custom media queries */
+@custom-media --mobile (max-width: 640px);
+@custom-media --tablet (max-width: 768px);
+@custom-media --desktop (min-width: 1024px);
+
+html {
+	scroll-behavior: smooth;
+	font-size: 16px;
+}
+
+body {
+	margin: 0;
+	padding: 0;
+	font-family: var(--font-body);
+	background: var(--color-paper);
+	color: var(--color-ink);
+	line-height: 1.65;
+	min-height: 100vh;
+	background-image:
+		radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
+		radial-gradient(circle at 80% 70%, rgba(200, 75, 49, 0.03) 0%, transparent 50%);
+}
+
+/* Typography hierarchy */
+h1, h2, h3, h4, h5, h6 {
+	font-family: var(--font-display);
+	font-weight: 700;
+	line-height: 1.15;
+	margin: 0;
+	color: var(--color-ink);
+}
+
+h1 {
+	font-size: clamp(2.5rem, 5vw, 4rem);
+	letter-spacing: -0.02em;
+}
+
+h2 {
+	font-size: clamp(1.75rem, 3.5vw, 2.75rem);
+	letter-spacing: -0.01em;
+}
+
+h3 {
+	font-size: 1.5rem;
+	font-weight: 600;
+}
+
+p {
+	margin: 0 0 var(--space-md) 0;
+	max-width: 65ch;
+}
+
+/* Links */
+a {
+	color: var(--color-accent);
+	text-decoration: none;
+	border-bottom: 1px solid transparent;
+	transition: border-color var(--transition-fast);
+
+	&:hover {
+		border-bottom-color: var(--color-accent);
+	}
+
+	&:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 2px;
+	}
+}
+
+/* Form elements */
+input,
+textarea,
+select {
+	width: 100%;
+	padding: var(--space-sm) var(--space-md);
+	background: #fff;
+	border: 2px solid var(--color-muted);
+	border-radius: 2px;
+	color: var(--color-ink);
+	font-family: var(--font-body);
+	font-size: 1rem;
+	transition: border-color var(--transition-fast);
+
+	&:focus {
+		outline: none;
+		border-color: var(--color-accent);
+	}
+
+	&::placeholder {
+		color: var(--color-muted);
+	}
+}
+
+button {
+	font-family: var(--font-body);
+	cursor: pointer;
+}
+
+/* Layout utilities - BEM style */
+.container {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 0 var(--space-lg);
+}
+
+.grid {
+	display: grid;
+	gap: var(--space-lg);
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+/* Form group - BEM block */
+.form-group {
+	margin-bottom: var(--space-md);
+
+	& label {
+		display: block;
+		margin-bottom: var(--space-xs);
+		font-weight: 600;
+		font-size: 0.875rem;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--color-shelf);
+	}
+}
+
+/* Status messages - BEM blocks */
+.message {
+	margin-top: var(--space-xs);
+	font-size: 0.875rem;
+	font-weight: 500;
+
+	&--error {
+		color: #c84b31;
+	}
+
+	&--success {
+		color: #2d6a4f;
+	}
+}
+
+/* Button classes (global, used by form pages) */
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: var(--space-sm) var(--space-lg);
+	background: transparent;
+	border: 2px solid var(--color-shelf);
+	border-radius: 2px;
+	color: var(--color-shelf);
+	text-decoration: none;
+	font-weight: 600;
+	font-size: 0.95rem;
+	cursor: pointer;
+	transition: all var(--transition-base);
+	font-family: var(--font-body);
+	text-align: center;
+	line-height: 1.4;
+}
+
+.btn:hover:not(:disabled) {
+	background: var(--color-shelf);
+	color: var(--color-paper);
+	border-bottom: 2px solid var(--color-shelf);
+	transform: translateY(-1px);
+}
+
+.btn--primary {
+	background: var(--color-accent);
+	border-color: var(--color-accent);
+	color: #fff;
+}
+
+.btn--primary:hover:not(:disabled) {
+	background: var(--color-accent-light);
+	border-color: var(--color-accent-light);
+	color: #fff;
+}
+
+.btn--danger {
+	background: #c84b31;
+	border-color: #c84b31;
+	color: #fff;
+}
+
+.btn--danger:hover:not(:disabled) {
+	background: #a33b26;
+	border-color: #a33b26;
+	color: #fff;
+}
+
+.btn:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+/* Utility classes - BEM style */
+.text {
+	&--muted {
+		color: var(--color-muted);
+	}
+
+	&--mono {
+		font-family: var(--font-mono);
+		font-size: 0.875rem;
+		letter-spacing: 0.02em;
+	}
+}
+
+/* Empty state - shared across routes */
+.empty-state {
+	text-align: center;
+	padding: var(--space-xl) var(--space-md);
+	border: 2px dashed rgba(43, 33, 24, 0.2);
+	border-radius: 2px;
+	background: rgba(249, 246, 241, 0.5);
+
+	&__text {
+		font-family: var(--font-display);
+		font-size: 1.5rem;
+		color: var(--color-muted);
+		margin: 0;
+	}
+}
+
+/* Import fonts */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');

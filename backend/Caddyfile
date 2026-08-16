@@ -1,0 +1,14 @@
+{
+    frankenphp
+    order php_server before file_server
+}
+
+:8080 {
+    root * /app/public
+    encode gzip
+    php_server
+    file_server
+    log {
+        output stdout
+    }
+}
