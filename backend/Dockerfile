@@ -34,7 +34,7 @@ COPY Caddyfile /etc/caddy/Caddyfile
 
 # Copy entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh /app/yii
 
 # Expose port
 EXPOSE 8080

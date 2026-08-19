@@ -1,0 +1,26 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Symfony\Component\Console\Application;
+use Yiisoft\Db\Migration\Command\CreateCommand;
+use Yiisoft\Db\Migration\Command\DownCommand;
+use Yiisoft\Db\Migration\Command\HistoryCommand;
+use Yiisoft\Db\Migration\Command\NewCommand;
+use Yiisoft\Db\Migration\Command\RedoCommand;
+use Yiisoft\Db\Migration\Command\UpdateCommand;
+
+/** @var App\Shared\Container $container */
+$container = require __DIR__ . '/console/bootstrap.php';
+
+$application = new Application('Books Catalog Console');
+$application->addCommands([
+    $container->get(CreateCommand::class),
+    $container->get(UpdateCommand::class),
+    $container->get(DownCommand::class),
+    $container->get(HistoryCommand::class),
+    $container->get(NewCommand::class),
+    $container->get(RedoCommand::class),
+]);
+$application->run();

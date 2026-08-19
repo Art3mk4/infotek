@@ -14,16 +14,7 @@ $container = new App\Shared\Container();
 // resolve their connection through ConnectionProvider's static registry rather than
 // constructor injection (Entity/ActiveRecord instances aren't DI services), so it must
 // be set up before any model is touched, regardless of which action handles the request.
-$dbHost = $_ENV['DB_HOST'] ?? 'db';
-$dbName = $_ENV['DB_NAME'] ?? 'books';
-$dbUser = $_ENV['DB_USER'] ?? 'yii';
-$dbPassword = $_ENV['DB_PASSWORD'] ?? 'yiipass';
-
-$dbDriver = new \Yiisoft\Db\Pgsql\Driver("pgsql:host={$dbHost};dbname={$dbName}", $dbUser, $dbPassword);
-$dbSchemaCache = new \Yiisoft\Db\Cache\SchemaCache(new \Yiisoft\Cache\ArrayCache());
-$dbConnection = new \Yiisoft\Db\Pgsql\Connection($dbDriver, $dbSchemaCache);
-
-\Yiisoft\Db\Connection\ConnectionProvider::set($dbConnection);
+$dbConnection = App\Shared\DbConnectionFactory::create();
 
 $container->set(\Yiisoft\Db\Connection\ConnectionInterface::class, static fn () => $dbConnection);
 
