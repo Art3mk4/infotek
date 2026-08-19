@@ -14,9 +14,9 @@ final class SubscriptionResource implements ResourceInterface
     {
         return [
             'id' => $this->subscription->id,
-            'author_id' => $this->subscription->authorId,
+            'author_id' => $this->subscription->author_id,
             'phone' => $this->subscription->phone,
-            'created_at' => $this->subscription->createdAt,
+            'created_at' => $this->subscription->created_at?->format('Y-m-d H:i:s.u'),
         ];
     }
 

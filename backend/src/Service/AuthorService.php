@@ -47,9 +47,8 @@ final class AuthorService
 
     public function create(CreateAuthorData $data): Author
     {
-        $author = new Author(
-            fullName: $data->fullName,
-        );
+        $author = new Author();
+        $author->full_name = $data->fullName;
 
         return $this->authorRepository->create($author);
     }
@@ -61,7 +60,7 @@ final class AuthorService
             return null;
         }
 
-        $author->fullName = $data->fullName;
+        $author->full_name = $data->fullName;
         $this->authorRepository->update($author);
 
         return $author;

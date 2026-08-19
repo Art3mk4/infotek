@@ -26,10 +26,9 @@ final class SubscriptionService
             throw new \InvalidArgumentException('Invalid phone number format');
         }
 
-        $subscription = new Subscription(
-            authorId: $data->authorId,
-            phone: $phone,
-        );
+        $subscription = new Subscription();
+        $subscription->author_id = $data->authorId;
+        $subscription->phone = $phone;
 
         return $this->subscriptionRepository->create($subscription);
     }

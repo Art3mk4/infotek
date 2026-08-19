@@ -26,7 +26,7 @@ final class ViewAction
             return $this->errorResponse('Author not found', 404);
         }
 
-        return $this->jsonResponse((new AuthorResource($author))->toArray());
+        return $this->jsonResponse((new AuthorResource($author, withRelations: true))->toArray());
     }
 
     private function jsonResponse(array $data, int $status = 200): ResponseInterface

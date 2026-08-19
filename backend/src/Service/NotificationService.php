@@ -49,7 +49,7 @@ final class NotificationService
         }
 
         $phones = array_unique(array_map(static fn($subscription) => $subscription->phone, $subscriptions));
-        $authorNames = implode(', ', array_map(static fn($author) => $author->fullName, $book->authors));
+        $authorNames = implode(', ', array_map(static fn($author) => $author->full_name, $book->authors));
         $message = sprintf(
             'New book published: "%s" by %s (%d)',
             $book->title,

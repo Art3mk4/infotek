@@ -4,26 +4,34 @@ declare(strict_types=1);
 
 namespace App\Domain;
 
+use Yiisoft\ActiveRecord\ActiveQuery;
+use Yiisoft\ActiveRecord\ActiveRecord;
+use Yiisoft\ActiveRecord\Trait\MagicPropertiesTrait;
+use Yiisoft\ActiveRecord\Trait\MagicRelationsTrait;
+use Yiisoft\ActiveRecord\Trait\RepositoryTrait;
+
 /**
- * Subscription domain model
+ * Subscription model.
+ *
+ * @property int|null $id
+ * @property int $author_id
+ * @property string $phone
+ * @property \DateTimeImmutable|null $created_at
+ * @property-read Author|null $author
  */
-final class Subscription
+final class Subscription extends ActiveRecord
 {
-    public function __construct(
-        public ?int $id = null,
-        public int $authorId = 0,
-        public string $phone = '',
-        public ?string $createdAt = null,
-    ) {
+    use MagicPropertiesTrait;
+    use MagicRelationsTrait;
+    use RepositoryTrait;
+
+    public function tableName(): string
+    {
+        return 'subscription';
     }
 
-    public static function fromArray(array $data): self
+    public function getAuthorQuery(): ActiveQuery
     {
-        return new self(
-            id: $data['id'] ?? null,
-            authorId: (int)($data['author_id'] ?? 0),
-            phone: $data['phone'] ?? '',
-            createdAt: $data['created_at'] ?? null,
-        );
+        return $this->hasOne(Author::class, ['id' => 'author_id']);
     }
 }

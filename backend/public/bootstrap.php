@@ -10,17 +10,22 @@ if (file_exists(__DIR__ . '/../.env')) {
 
 $container = new App\Shared\Container();
 
-$container->set(\Yiisoft\Db\Connection\ConnectionInterface::class, static function (): \Yiisoft\Db\Connection\ConnectionInterface {
-    $host = $_ENV['DB_HOST'] ?? 'db';
-    $dbname = $_ENV['DB_NAME'] ?? 'books';
-    $user = $_ENV['DB_USER'] ?? 'yii';
-    $password = $_ENV['DB_PASSWORD'] ?? 'yiipass';
+// Built eagerly (not just registered as a lazy factory) because ActiveRecord models
+// resolve their connection through ConnectionProvider's static registry rather than
+// constructor injection (Entity/ActiveRecord instances aren't DI services), so it must
+// be set up before any model is touched, regardless of which action handles the request.
+$dbHost = $_ENV['DB_HOST'] ?? 'db';
+$dbName = $_ENV['DB_NAME'] ?? 'books';
+$dbUser = $_ENV['DB_USER'] ?? 'yii';
+$dbPassword = $_ENV['DB_PASSWORD'] ?? 'yiipass';
 
-    $driver = new \Yiisoft\Db\Pgsql\Driver("pgsql:host={$host};dbname={$dbname}", $user, $password);
-    $schemaCache = new \Yiisoft\Db\Cache\SchemaCache(new App\Shared\NullCache());
+$dbDriver = new \Yiisoft\Db\Pgsql\Driver("pgsql:host={$dbHost};dbname={$dbName}", $dbUser, $dbPassword);
+$dbSchemaCache = new \Yiisoft\Db\Cache\SchemaCache(new \Yiisoft\Cache\ArrayCache());
+$dbConnection = new \Yiisoft\Db\Pgsql\Connection($dbDriver, $dbSchemaCache);
 
-    return new \Yiisoft\Db\Pgsql\Connection($driver, $schemaCache);
-});
+\Yiisoft\Db\Connection\ConnectionProvider::set($dbConnection);
+
+$container->set(\Yiisoft\Db\Connection\ConnectionInterface::class, static fn () => $dbConnection);
 
 // The container only autowires concrete classes (see Container::has()), so repository
 // interfaces need an explicit binding to their infrastructure implementation.

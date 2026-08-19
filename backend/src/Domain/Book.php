@@ -4,36 +4,38 @@ declare(strict_types=1);
 
 namespace App\Domain;
 
+use Yiisoft\ActiveRecord\ActiveQuery;
+use Yiisoft\ActiveRecord\ActiveRecord;
+use Yiisoft\ActiveRecord\Trait\MagicPropertiesTrait;
+use Yiisoft\ActiveRecord\Trait\MagicRelationsTrait;
+use Yiisoft\ActiveRecord\Trait\RepositoryTrait;
+
 /**
- * Book domain model
+ * Book model.
+ *
+ * @property int|null $id
+ * @property string $title
+ * @property int $year
+ * @property string|null $description
+ * @property string|null $isbn
+ * @property string|null $cover_image
+ * @property \DateTimeImmutable|null $created_at
+ * @property \DateTimeImmutable|null $updated_at
+ * @property-read Author[] $authors
  */
-final class Book
+final class Book extends ActiveRecord
 {
-    public function __construct(
-        public ?int $id = null,
-        public string $title = '',
-        public int $year = 0,
-        public ?string $description = null,
-        public ?string $isbn = null,
-        public ?string $coverImage = null,
-        public ?string $createdAt = null,
-        public ?string $updatedAt = null,
-        /** @var Author[] */
-        public array $authors = [],
-    ) {
+    use MagicPropertiesTrait;
+    use MagicRelationsTrait;
+    use RepositoryTrait;
+
+    public function tableName(): string
+    {
+        return 'book';
     }
 
-    public static function fromArray(array $data): self
+    public function getAuthorsQuery(): ActiveQuery
     {
-        return new self(
-            id: $data['id'] ?? null,
-            title: $data['title'] ?? '',
-            year: (int)($data['year'] ?? 0),
-            description: $data['description'] ?? null,
-            isbn: $data['isbn'] ?? null,
-            coverImage: $data['cover_image'] ?? null,
-            createdAt: $data['created_at'] ?? null,
-            updatedAt: $data['updated_at'] ?? null,
-        );
+        return $this->hasMany(Author::class, ['id' => 'author_id'])->viaTable('book_author', ['book_id' => 'id']);
     }
 }

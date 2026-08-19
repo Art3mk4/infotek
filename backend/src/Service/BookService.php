@@ -44,13 +44,12 @@ final class BookService
 
     public function create(CreateBookData $data): Book
     {
-        $book = new Book(
-            title: $data->title,
-            year: $data->year,
-            description: $data->description,
-            isbn: $data->isbn,
-            coverImage: $data->coverImage,
-        );
+        $book = new Book();
+        $book->title = $data->title;
+        $book->year = $data->year;
+        $book->description = $data->description;
+        $book->isbn = $data->isbn;
+        $book->cover_image = $data->coverImage;
 
         $book = $this->bookRepository->create($book);
 
@@ -82,7 +81,7 @@ final class BookService
         $book->year = $data->year ?? $book->year;
         $book->description = $data->description ?? $book->description;
         $book->isbn = $data->isbn ?? $book->isbn;
-        $book->coverImage = $data->coverImage ?? $book->coverImage;
+        $book->cover_image = $data->coverImage ?? $book->cover_image;
 
         $this->bookRepository->update($book);
 
