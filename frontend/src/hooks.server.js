@@ -12,7 +12,12 @@ export async function handle({ event, resolve }) {
 		event.locals.authToken = null;
 	}
 
-	const protectedPaths = [/^\/books\/new$/, /^\/books\/\d+\/edit$/, /^\/authors\/new$/, /^\/authors\/\d+\/edit$/];
+	const protectedPaths = [
+		/^\/books\/new$/,
+		/^\/books\/\d+\/edit$/,
+		/^\/authors\/new$/,
+		/^\/authors\/\d+\/edit$/
+	];
 	const isProtected = protectedPaths.some((pattern) => pattern.test(event.url.pathname));
 
 	if (isProtected && !event.locals.isAuthenticated) {

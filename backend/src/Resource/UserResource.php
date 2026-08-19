@@ -17,8 +17,8 @@ final class UserResource implements ResourceInterface
             'username' => $this->user->username,
             'email' => $this->user->email,
             'status' => $this->user->status,
-            'created_at' => $this->user->createdAt,
-            'updated_at' => $this->user->updatedAt,
+            'created_at' => $this->user->created_at?->format('Y-m-d H:i:s.u'),
+            'updated_at' => $this->user->updated_at?->format('Y-m-d H:i:s.u'),
         ];
     }
 }

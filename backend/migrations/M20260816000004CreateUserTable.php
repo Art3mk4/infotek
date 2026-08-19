@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Migration;
 
+use Yiisoft\Db\Expression\Expression;
 use Yiisoft\Db\Migration\MigrationBuilder;
 use Yiisoft\Db\Migration\RevertibleMigrationInterface;
+use Yiisoft\Db\Schema\Column\ColumnBuilder;
 
 /**
  * Create user table
@@ -15,19 +17,19 @@ final class M20260816000004CreateUserTable implements RevertibleMigrationInterfa
     public function up(MigrationBuilder $b): void
     {
         $b->createTable('user', [
-            'id' => $b->primaryKey(),
-            'username' => $b->string(100)->notNull()->unique(),
-            'email' => $b->string(255)->notNull()->unique(),
-            'password_hash' => $b->string(255)->notNull(),
-            'auth_key' => $b->string(32),
-            'status' => $b->smallInteger()->defaultValue(10),
-            'created_at' => $b->timestamp()->defaultExpression('CURRENT_TIMESTAMP'),
-            'updated_at' => $b->timestamp()->defaultExpression('CURRENT_TIMESTAMP'),
+            'id' => ColumnBuilder::primaryKey(),
+            'username' => ColumnBuilder::string(100)->notNull()->unique(),
+            'email' => ColumnBuilder::string(255)->notNull()->unique(),
+            'password_hash' => ColumnBuilder::string(255)->notNull(),
+            'auth_key' => ColumnBuilder::string(32),
+            'status' => ColumnBuilder::smallint()->defaultValue(10),
+            'created_at' => ColumnBuilder::timestamp()->defaultValue(new Expression('CURRENT_TIMESTAMP')),
+            'updated_at' => ColumnBuilder::timestamp()->defaultValue(new Expression('CURRENT_TIMESTAMP')),
         ]);
 
-        $b->createIndex('idx_user_username', 'user', ['username']);
-        $b->createIndex('idx_user_email', 'user', ['email']);
-        $b->createIndex('idx_user_status', 'user', ['status']);
+        $b->createIndex('user', 'idx_user_username', 'username');
+        $b->createIndex('user', 'idx_user_email', 'email');
+        $b->createIndex('user', 'idx_user_status', 'status');
     }
 
     public function down(MigrationBuilder $b): void

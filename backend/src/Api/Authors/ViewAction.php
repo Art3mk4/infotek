@@ -20,13 +20,13 @@ final class ViewAction
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
         $id = (int)$request->getAttribute('id');
-        $author = $this->authorService->getById($id);
+        $author = $this->authorService->getByIdWithRelations($id);
 
         if (!$author) {
             return $this->errorResponse('Author not found', 404);
         }
 
-        return $this->jsonResponse((new AuthorResource($author))->toArray());
+        return $this->jsonResponse((new AuthorResource($author, withRelations: true))->toArray());
     }
 
     private function jsonResponse(array $data, int $status = 200): ResponseInterface

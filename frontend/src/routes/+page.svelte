@@ -4,15 +4,18 @@
 
 <svelte:head>
 	<title>Catalog — Find Books Worth Reading</title>
-	<meta name="description" content="A curated digital card catalog connecting readers with books and authors" />
+	<meta
+		name="description"
+		content="A curated digital card catalog connecting readers with books and authors"
+	/>
 </svelte:head>
 
 <div class="hero">
 	<div class="hero-content">
 		<p class="hero-eyebrow text-mono">Since 2026</p>
-		<h1>Every book<br/>has a story</h1>
+		<h1>Every book<br />has a story</h1>
 		<p class="hero-body">
-			Browse our card catalog. Subscribe to authors.<br/>
+			Browse our card catalog. Subscribe to authors.<br />
 			Track what matters in literature.
 		</p>
 		<div class="hero-actions">
@@ -36,7 +39,10 @@
 				<div class="feature-number text-mono">01</div>
 				<div class="feature-content">
 					<h3>Browse the collection</h3>
-					<p>Search by title, author, or year. Each entry includes publication details and author information.</p>
+					<p>
+						Search by title, author, or year. Each entry includes publication details and author
+						information.
+					</p>
 				</div>
 			</div>
 

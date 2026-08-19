@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Migration;
 
+use Yiisoft\Db\Expression\Expression;
 use Yiisoft\Db\Migration\MigrationBuilder;
 use Yiisoft\Db\Migration\RevertibleMigrationInterface;
+use Yiisoft\Db\Schema\Column\ColumnBuilder;
 
 /**
  * Create book table
@@ -15,19 +17,19 @@ final class M20260816000002CreateBookTable implements RevertibleMigrationInterfa
     public function up(MigrationBuilder $b): void
     {
         $b->createTable('book', [
-            'id' => $b->primaryKey(),
-            'title' => $b->string(255)->notNull(),
-            'year' => $b->integer()->notNull(),
-            'description' => $b->text(),
-            'isbn' => $b->string(20),
-            'cover_image' => $b->string(255),
-            'created_at' => $b->timestamp()->defaultExpression('CURRENT_TIMESTAMP'),
-            'updated_at' => $b->timestamp()->defaultExpression('CURRENT_TIMESTAMP'),
+            'id' => ColumnBuilder::primaryKey(),
+            'title' => ColumnBuilder::string(255)->notNull(),
+            'year' => ColumnBuilder::integer()->notNull(),
+            'description' => ColumnBuilder::text(),
+            'isbn' => ColumnBuilder::string(20),
+            'cover_image' => ColumnBuilder::string(255),
+            'created_at' => ColumnBuilder::timestamp()->defaultValue(new Expression('CURRENT_TIMESTAMP')),
+            'updated_at' => ColumnBuilder::timestamp()->defaultValue(new Expression('CURRENT_TIMESTAMP')),
         ]);
 
-        $b->createIndex('idx_book_title', 'book', ['title']);
-        $b->createIndex('idx_book_year', 'book', ['year']);
-        $b->createIndex('idx_book_isbn', 'book', ['isbn']);
+        $b->createIndex('book', 'idx_book_title', 'title');
+        $b->createIndex('book', 'idx_book_year', 'year');
+        $b->createIndex('book', 'idx_book_isbn', 'isbn');
     }
 
     public function down(MigrationBuilder $b): void

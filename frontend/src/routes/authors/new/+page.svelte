@@ -1,5 +1,8 @@
 <script>
 	import { enhance } from '$app/forms';
+	import PageHeader from '$lib/components/PageHeader.svelte';
+	import ErrorMessage from '$lib/components/ErrorMessage.svelte';
+	import { withLoading } from '$lib/formEnhance.js';
 
 	export let form;
 	let isSubmitting = false;
@@ -11,24 +14,11 @@
 </svelte:head>
 
 <div class="page">
-	<header class="page__header">
-		<h1 class="page__title">Add Author</h1>
-		<p class="page__subtitle">Create a new author profile</p>
-	</header>
+	<PageHeader title="Add Author" subtitle="Create a new author profile" />
 
-	{#if form?.error}
-		<div class="message message--error">
-			<p>⚠️ {form.error}</p>
-		</div>
-	{/if}
+	<ErrorMessage message={form?.error} />
 
-	<form class="form" method="POST" use:enhance={() => {
-		isSubmitting = true;
-		return async ({ update }) => {
-			await update();
-			isSubmitting = false;
-		};
-	}}>
+	<form class="form" method="POST" use:enhance={withLoading((v) => (isSubmitting = v))}>
 		<div class="form-group">
 			<label for="full_name">Full Name</label>
 			<input type="text" id="full_name" name="full_name" required disabled={isSubmitting} />
@@ -42,19 +32,3 @@
 		</div>
 	</form>
 </div>
-
-<style>
-	.form {
-		max-width: 700px;
-		background: #fff;
-		padding: var(--space-lg);
-		border: 1px solid rgba(43, 33, 24, 0.1);
-		border-radius: 2px;
-	}
-
-	.form-actions {
-		display: flex;
-		gap: var(--space-md);
-		margin-top: var(--space-lg);
-	}
-</style>

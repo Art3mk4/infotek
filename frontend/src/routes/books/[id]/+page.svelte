@@ -1,26 +1,31 @@
 <script>
 	export let data;
 	$: ({ book, isAuthenticated } = data);
+
+	$: jsonLd = JSON.stringify({
+		'@context': 'https://schema.org',
+		'@type': 'Book',
+		name: book.title,
+		datePublished: String(book.year),
+		isbn: book.isbn || '',
+		author: (book.authors || []).map((a) => ({ '@type': 'Person', name: a.full_name }))
+	}).replaceAll('<', '\\u003c'); // escape "<" so data like a title can't break out of the script tag below
 </script>
 
 <svelte:head>
 	<title>{book.title} — Catalog</title>
-	<meta name="description" content={book.description || `${book.title} by ${book.authors?.map(a => a.full_name).join(', ')}`} />
+	<meta
+		name="description"
+		content={book.description ||
+			`${book.title} by ${book.authors?.map((a) => a.full_name).join(', ')}`}
+	/>
 	<meta property="og:title" content={book.title} />
 	<meta property="og:description" content={book.description || ''} />
 	<meta property="og:type" content="book" />
 </svelte:head>
 
-{@html `<script type="application/ld+json">
-{
-	"@context": "https://schema.org",
-	"@type": "Book",
-	"name": "${book.title}",
-	"datePublished": "${book.year}",
-	"isbn": "${book.isbn || ''}",
-	"author": ${JSON.stringify(book.authors?.map(a => ({ "@type": "Person", "name": a.full_name })) || [])}
-}
-</script>`}
+<!-- eslint-disable-next-line svelte/no-at-html-tags, no-useless-escape -- static tag wrapping a pre-escaped JSON-LD string; the \/ avoids the Svelte parser mistaking this for a real nested <script> tag -->
+{@html `<script type="application/ld+json">${jsonLd}<\/script>`}
 
 <article class="book-detail">
 	<div class="book-detail__header">
@@ -53,7 +58,7 @@
 						{book.authors.length === 1 ? 'Author' : 'Authors'}
 					</h3>
 					<ul class="book-detail__authors-list">
-						{#each book.authors as author}
+						{#each book.authors as author (author.id)}
 							<li class="book-detail__author-item">
 								<a href="/authors/{author.id}" class="book-detail__author-link">
 									{author.full_name}

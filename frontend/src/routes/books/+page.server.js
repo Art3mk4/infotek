@@ -2,7 +2,7 @@ import { fetchApiWithAuth } from '$lib/serverApi.js';
 
 export async function load(event) {
 	const page = parseInt(event.url.searchParams.get('page') || '1');
-	const perPage = 20;
+	const perPage = 9;
 
 	try {
 		const data = await fetchApiWithAuth(event, `/books?page=${page}&per_page=${perPage}`);

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Domain\Author;
-use App\Repository\AuthorRepository;
+use App\Domain\AuthorRepositoryInterface;
 use App\ValueObject\CreateAuthorData;
 use App\ValueObject\UpdateAuthorData;
 
@@ -16,7 +16,7 @@ use App\ValueObject\UpdateAuthorData;
 final class AuthorService
 {
     public function __construct(
-        private AuthorRepository $authorRepository,
+        private AuthorRepositoryInterface $authorRepository,
     ) {
     }
 
@@ -40,11 +40,15 @@ final class AuthorService
         return $this->authorRepository->findById($id);
     }
 
+    public function getByIdWithRelations(int $id): ?Author
+    {
+        return $this->authorRepository->findByIdWithRelations($id);
+    }
+
     public function create(CreateAuthorData $data): Author
     {
-        $author = new Author(
-            fullName: $data->fullName,
-        );
+        $author = new Author();
+        $author->full_name = $data->fullName;
 
         return $this->authorRepository->create($author);
     }
@@ -56,7 +60,7 @@ final class AuthorService
             return null;
         }
 
-        $author->fullName = $data->fullName;
+        $author->full_name = $data->fullName;
         $this->authorRepository->update($author);
 
         return $author;

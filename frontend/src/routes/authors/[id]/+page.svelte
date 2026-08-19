@@ -1,5 +1,6 @@
 <script>
 	import { enhance } from '$app/forms';
+	import { withLoading } from '$lib/formEnhance.js';
 
 	export let data;
 	export let form;
@@ -28,13 +29,7 @@
 		<h2>Subscribe to Author Updates</h2>
 		<p>Get notified when this author publishes new books.</p>
 
-		<form method="POST" action="?/subscribe" use:enhance={() => {
-			isSubmitting = true;
-			return async ({ update }) => {
-				await update();
-				isSubmitting = false;
-			};
-		}}>
+		<form method="POST" action="?/subscribe" use:enhance={withLoading((v) => (isSubmitting = v))}>
 			<div class="form-group">
 				<label for="phone">Phone Number</label>
 				<input

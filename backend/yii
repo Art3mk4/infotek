@@ -3,144 +3,24 @@
 
 declare(strict_types=1);
 
-// Simple migration runner without Yii console
-require __DIR__ . '/vendor/autoload.php';
+use Symfony\Component\Console\Application;
+use Yiisoft\Db\Migration\Command\CreateCommand;
+use Yiisoft\Db\Migration\Command\DownCommand;
+use Yiisoft\Db\Migration\Command\HistoryCommand;
+use Yiisoft\Db\Migration\Command\NewCommand;
+use Yiisoft\Db\Migration\Command\RedoCommand;
+use Yiisoft\Db\Migration\Command\UpdateCommand;
 
-// Load environment
-if (file_exists(__DIR__ . '/.env')) {
-    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
-    $dotenv->safeLoad();
-}
+/** @var App\Shared\Container $container */
+$container = require __DIR__ . '/console/bootstrap.php';
 
-use Yiisoft\Db\Pgsql\Connection;
-use Yiisoft\Db\Pgsql\Driver;
-use Yiisoft\Db\Cache\SchemaCache;
-use Yiisoft\Db\Migration\MigrationBuilder;
-use Yiisoft\Db\Migration\Informer\NullMigrationInformer;
-use Psr\SimpleCache\CacheInterface;
-
-// Simple null cache implementation
-class NullCache implements CacheInterface {
-    public function get(string $key, mixed $default = null): mixed { return $default; }
-    public function set(string $key, mixed $value, null|int|\DateInterval $ttl = null): bool { return true; }
-    public function delete(string $key): bool { return true; }
-    public function clear(): bool { return true; }
-    public function getMultiple(iterable $keys, mixed $default = null): iterable { return []; }
-    public function setMultiple(iterable $values, null|int|\DateInterval $ttl = null): bool { return true; }
-    public function deleteMultiple(iterable $keys): bool { return true; }
-    public function has(string $key): bool { return false; }
-}
-
-$dsn = $_ENV['DB_DSN'] ?? 'pgsql:host=db;dbname=books';
-$username = $_ENV['DB_USER'] ?? 'yii';
-$password = $_ENV['DB_PASSWORD'] ?? 'yiipass';
-
-$command = $argv[1] ?? 'migrate/up';
-$command = str_replace(':', '/', $command);
-
-try {
-    $driver = new Driver($dsn, $username, $password);
-    $schemaCache = new SchemaCache(new NullCache());
-    $db = new Connection($driver, $schemaCache);
-
-    $pdo = $db->getActivePdo();
-
-    // Ensure migration tracking table exists
-    $pdo->exec("CREATE TABLE IF NOT EXISTS migration (
-        version VARCHAR(255) PRIMARY KEY,
-        apply_time INTEGER DEFAULT 0
-    )");
-
-    $files = glob(__DIR__ . '/migrations/M*.php');
-    sort($files);
-
-    $applied = $pdo->query("SELECT version FROM migration ORDER BY version")->fetchAll(PDO::FETCH_COLUMN);
-    $applied = array_flip($applied);
-
-    $migrations = [];
-    foreach ($files as $file) {
-        $version = basename($file, '.php');
-        $className = 'App\\Migration\\' . $version;
-        require_once $file;
-        $migrations[$version] = [
-            'file' => $file,
-            'class' => $className,
-            'applied' => isset($applied[$version]),
-        ];
-    }
-
-    if ($command === 'migrate/up') {
-        // If no migrations have been tracked yet but the schema already exists,
-        // assume the schema-creating migrations are applied to avoid re-creating tables.
-        if (empty($applied)) {
-            $schemaExists = $pdo->query("SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'author'")->fetchColumn();
-            if ($schemaExists) {
-                foreach ($migrations as $version => $migration) {
-                    if (str_contains($version, 'Create') || $version === 'M20260816000006InsertDemoUser') {
-                        $pdo->prepare("INSERT INTO migration (version, apply_time) VALUES (?, ?)")
-                            ->execute([$version, time()]);
-                        $migrations[$version]['applied'] = true;
-                    }
-                }
-
-                $hasSeedData = $pdo->query("SELECT 1 FROM author LIMIT 1")->fetchColumn();
-                if ($hasSeedData) {
-                    $seedVersion = 'M20260816000007SeedTestData';
-                    if (isset($migrations[$seedVersion]) && !$migrations[$seedVersion]['applied']) {
-                        $pdo->prepare("INSERT INTO migration (version, apply_time) VALUES (?, ?)")
-                            ->execute([$seedVersion, time()]);
-                        $migrations[$seedVersion]['applied'] = true;
-                    }
-                }
-
-                echo "Detected existing schema; marked schema migrations as applied.\n\n";
-            }
-        }
-
-        echo "Running migrations...\n\n";
-        $run = 0;
-        foreach ($migrations as $version => $migration) {
-            if ($migration['applied']) {
-                continue;
-            }
-
-            echo "Applying: {$version}\n";
-            $instance = new $migration['class']();
-            $builder = new MigrationBuilder($db, new NullMigrationInformer());
-            $instance->up($builder);
-            $pdo->prepare("INSERT INTO migration (version, apply_time) VALUES (?, ?)")
-                ->execute([$version, time()]);
-            echo "✓ Done\n\n";
-            $run++;
-        }
-
-        if ($run === 0) {
-            echo "No new migrations to apply.\n";
-        } else {
-            echo "All migrations applied!\n";
-        }
-    } elseif ($command === 'migrate/down') {
-        $lastApplied = $pdo->query("SELECT version FROM migration ORDER BY version DESC LIMIT 1")->fetchColumn();
-
-        if (!$lastApplied || !isset($migrations[$lastApplied])) {
-            echo "No migrations to revert.\n";
-            exit(0);
-        }
-
-        echo "Reverting: {$lastApplied}\n";
-        $migration = $migrations[$lastApplied];
-        $instance = new $migration['class']();
-        $builder = new MigrationBuilder($db, new NullMigrationInformer());
-        $instance->down($builder);
-        $pdo->prepare("DELETE FROM migration WHERE version = ?")->execute([$lastApplied]);
-        echo "✓ Done\n";
-    } else {
-        echo "Unknown command: {$command}\n";
-        echo "Usage: php yii migrate/up | php yii migrate/down\n";
-        exit(1);
-    }
-} catch (\Exception $e) {
-    echo "Error: " . $e->getMessage() . "\n";
-    echo $e->getTraceAsString() . "\n";
-    exit(1);
-}
+$application = new Application('Books Catalog Console');
+$application->addCommands([
+    $container->get(CreateCommand::class),
+    $container->get(UpdateCommand::class),
+    $container->get(DownCommand::class),
+    $container->get(HistoryCommand::class),
+    $container->get(NewCommand::class),
+    $container->get(RedoCommand::class),
+]);
+$application->run();

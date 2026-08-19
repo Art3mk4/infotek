@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use App\Repository\AuthorRepository;
+use App\Domain\AuthorRepositoryInterface;
 
 /**
  * Author report service - generates reports on authors.
@@ -13,7 +13,7 @@ use App\Repository\AuthorRepository;
 final class AuthorReportService
 {
     public function __construct(
-        private AuthorRepository $authorRepository
+        private AuthorRepositoryInterface $authorRepository
     ) {
     }
 

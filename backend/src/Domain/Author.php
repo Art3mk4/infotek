@@ -4,22 +4,38 @@ declare(strict_types=1);
 
 namespace App\Domain;
 
+use Yiisoft\ActiveRecord\ActiveQuery;
+use Yiisoft\ActiveRecord\ActiveRecord;
+use Yiisoft\ActiveRecord\Trait\MagicPropertiesTrait;
+use Yiisoft\ActiveRecord\Trait\MagicRelationsTrait;
+use Yiisoft\ActiveRecord\Trait\RepositoryTrait;
+
 /**
- * Author domain model
+ * Author model.
+ *
+ * @property int|null $id
+ * @property string $full_name
+ * @property-read Book[] $books
+ * @property-read Subscription[] $subscriptions
  */
-final class Author
+final class Author extends ActiveRecord
 {
-    public function __construct(
-        public ?int $id = null,
-        public string $fullName = '',
-    ) {
+    use MagicPropertiesTrait;
+    use MagicRelationsTrait;
+    use RepositoryTrait;
+
+    public function tableName(): string
+    {
+        return 'author';
     }
 
-    public static function fromArray(array $data): self
+    public function getBooksQuery(): ActiveQuery
     {
-        return new self(
-            id: $data['id'] ?? null,
-            fullName: $data['full_name'] ?? '',
-        );
+        return $this->hasMany(Book::class, ['id' => 'book_id'])->viaTable('book_author', ['author_id' => 'id']);
+    }
+
+    public function getSubscriptionsQuery(): ActiveQuery
+    {
+        return $this->hasMany(Subscription::class, ['author_id' => 'id']);
     }
 }

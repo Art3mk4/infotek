@@ -18,9 +18,9 @@ final class BookResource implements ResourceInterface
             'year' => $this->book->year,
             'description' => $this->book->description,
             'isbn' => $this->book->isbn,
-            'cover_image' => $this->book->coverImage,
-            'created_at' => $this->book->createdAt,
-            'updated_at' => $this->book->updatedAt,
+            'cover_image' => $this->book->cover_image,
+            'created_at' => $this->book->created_at?->format('Y-m-d H:i:s.u'),
+            'updated_at' => $this->book->updated_at?->format('Y-m-d H:i:s.u'),
             'authors' => AuthorResource::collection($this->book->authors),
         ];
     }

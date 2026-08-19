@@ -8,7 +8,7 @@ export async function load(event) {
 			fetchApiWithAuth(event, '/authors').then((data) => data.items || [])
 		]);
 		return { book, authors };
-	} catch (err) {
+	} catch {
 		throw error(404, 'Book not found');
 	}
 }

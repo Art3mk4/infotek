@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Domain\Subscription;
-use App\Repository\SubscriptionRepository;
+use App\Domain\SubscriptionRepositoryInterface;
 use App\ValueObject\CreateSubscriptionData;
 
 /**
@@ -15,7 +15,7 @@ use App\ValueObject\CreateSubscriptionData;
 final class SubscriptionService
 {
     public function __construct(
-        private SubscriptionRepository $subscriptionRepository,
+        private SubscriptionRepositoryInterface $subscriptionRepository,
     ) {
     }
 
@@ -26,10 +26,9 @@ final class SubscriptionService
             throw new \InvalidArgumentException('Invalid phone number format');
         }
 
-        $subscription = new Subscription(
-            authorId: $data->authorId,
-            phone: $phone,
-        );
+        $subscription = new Subscription();
+        $subscription->author_id = $data->authorId;
+        $subscription->phone = $phone;
 
         return $this->subscriptionRepository->create($subscription);
     }

@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Migration;
 
+use Yiisoft\Db\Constant\IndexType;
+use Yiisoft\Db\Expression\Expression;
 use Yiisoft\Db\Migration\MigrationBuilder;
 use Yiisoft\Db\Migration\RevertibleMigrationInterface;
+use Yiisoft\Db\Schema\Column\ColumnBuilder;
 
 /**
  * Create subscription table
@@ -15,25 +18,25 @@ final class M20260816000005CreateSubscriptionTable implements RevertibleMigratio
     public function up(MigrationBuilder $b): void
     {
         $b->createTable('subscription', [
-            'id' => $b->primaryKey(),
-            'author_id' => $b->integer()->notNull(),
-            'phone' => $b->string(20)->notNull(),
-            'created_at' => $b->timestamp()->defaultExpression('CURRENT_TIMESTAMP'),
+            'id' => ColumnBuilder::primaryKey(),
+            'author_id' => ColumnBuilder::integer()->notNull(),
+            'phone' => ColumnBuilder::string(20)->notNull(),
+            'created_at' => ColumnBuilder::timestamp()->defaultValue(new Expression('CURRENT_TIMESTAMP')),
         ]);
 
         $b->addForeignKey(
-            'fk_subscription_author',
             'subscription',
+            'fk_subscription_author',
             'author_id',
             'author',
             'id',
             'CASCADE',
-            'CASCADE'
         );
 
-        $b->createIndex('idx_subscription_author_id', 'subscription', ['author_id']);
-        $b->createIndex('idx_subscription_phone', 'subscription', ['phone']);
-        $b->createIndex('unique_author_phone', 'subscription', ['author_id', 'phone'], true);
+        $b->createIndex('subscription', 'unique_author_phone', ['author_id', 'phone'], IndexType::UNIQUE);
+
+        $b->createIndex('subscription', 'idx_subscription_author_id', 'author_id');
+        $b->createIndex('subscription', 'idx_subscription_phone', 'phone');
     }
 
     public function down(MigrationBuilder $b): void
