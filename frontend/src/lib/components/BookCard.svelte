@@ -21,7 +21,7 @@
 			<p class="book-card__year text--mono">{book.year}</p>
 			{#if book.authors && book.authors.length > 0}
 				<p class="book-card__authors text--muted">
-					by {book.authors.map(a => a.full_name).join(', ')}
+					by {book.authors.map((a) => a.full_name).join(', ')}
 				</p>
 			{/if}
 		</div>

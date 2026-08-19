@@ -5,7 +5,7 @@ export async function load(event) {
 	try {
 		const author = await fetchApiWithAuth(event, `/authors/${event.params.id}`);
 		return { author };
-	} catch (err) {
+	} catch {
 		throw error(404, 'Author not found');
 	}
 }
