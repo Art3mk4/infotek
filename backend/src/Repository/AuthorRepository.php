@@ -5,94 +5,148 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Domain\Author;
-use PDO;
+use App\Domain\AuthorRepositoryInterface;
+use App\Domain\Book;
+use App\Domain\Subscription;
+use Yiisoft\Db\Connection\ConnectionInterface;
+use Yiisoft\Db\Query\Query;
 
 /**
  * Author repository
  */
-final class AuthorRepository
+final class AuthorRepository implements AuthorRepositoryInterface
 {
     public function __construct(
-        private PDO $db
+        private ConnectionInterface $db
     ) {
     }
 
     public function findAll(int $limit = 50, int $offset = 0): array
     {
-        $stmt = $this->db->prepare(
-            'SELECT * FROM author ORDER BY full_name LIMIT :limit OFFSET :offset'
-        );
-        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-        $stmt->execute();
+        $rows = (new Query($this->db))
+            ->from('author')
+            ->orderBy(['full_name' => SORT_ASC])
+            ->limit($limit)
+            ->offset($offset)
+            ->all();
 
-        return array_map(
-            fn($row) => Author::fromArray($row),
-            $stmt->fetchAll(PDO::FETCH_ASSOC)
-        );
+        return array_map(static fn(array $row) => Author::fromArray($row), $rows);
     }
 
     public function findById(int $id): ?Author
     {
-        $stmt = $this->db->prepare('SELECT * FROM author WHERE id = :id');
-        $stmt->execute([':id' => $id]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $row = (new Query($this->db))->from('author')->where(['id' => $id])->one();
 
         return $row ? Author::fromArray($row) : null;
     }
 
+    public function findByIdWithRelations(int $id): ?Author
+    {
+        $author = $this->findById($id);
+        if ($author === null) {
+            return null;
+        }
+
+        $this->loadBooks([$author]);
+        $this->loadSubscriptions([$author]);
+
+        return $author;
+    }
+
     public function create(Author $author): Author
     {
-        $stmt = $this->db->prepare(
-            'INSERT INTO author (full_name) VALUES (:full_name)'
-        );
-        $stmt->execute([':full_name' => $author->fullName]);
+        $this->db->createCommand()->insert('author', ['full_name' => $author->fullName])->execute();
 
-        $author->id = (int)$this->db->lastInsertId();
+        $author->id = (int)$this->db->getLastInsertID('author_id_seq');
+
         return $author;
     }
 
     public function update(Author $author): bool
     {
-        $stmt = $this->db->prepare(
-            'UPDATE author SET full_name = :full_name WHERE id = :id'
-        );
-        return $stmt->execute([
-            ':id' => $author->id,
-            ':full_name' => $author->fullName,
-        ]);
+        return $this->db->createCommand()
+            ->update('author', ['full_name' => $author->fullName], ['id' => $author->id])
+            ->execute() > 0;
     }
 
     public function delete(int $id): bool
     {
-        $stmt = $this->db->prepare('DELETE FROM author WHERE id = :id');
-        return $stmt->execute([':id' => $id]);
+        return $this->db->createCommand()->delete('author', ['id' => $id])->execute() > 0;
     }
 
     public function count(): int
     {
-        $stmt = $this->db->query('SELECT COUNT(*) FROM author');
-        return (int)$stmt->fetchColumn();
+        return (new Query($this->db))->from('author')->count();
     }
 
     public function top10ByYear(int $year): array
     {
-        $stmt = $this->db->prepare(
-            'SELECT
-                author.id,
-                author.full_name,
-                COUNT(book.id) AS books_count
-            FROM author
-            INNER JOIN book_author ON book_author.author_id = author.id
-            INNER JOIN book ON book.id = book_author.book_id
-            WHERE book.year = :year
-            GROUP BY author.id, author.full_name
-            ORDER BY books_count DESC
-            LIMIT 10'
-        );
+        return (new Query($this->db))
+            ->select(['author.id', 'author.full_name', 'COUNT(book.id) AS books_count'])
+            ->from('author')
+            ->innerJoin('book_author', 'book_author.author_id = author.id')
+            ->innerJoin('book', 'book.id = book_author.book_id')
+            ->where(['book.year' => $year])
+            ->groupBy(['author.id', 'author.full_name'])
+            ->orderBy(['books_count' => SORT_DESC])
+            ->limit(10)
+            ->all();
+    }
 
-        $stmt->execute([':year' => $year]);
+    /**
+     * Eager-loads books for a batch of authors in a single query.
+     *
+     * @param Author[] $authors
+     */
+    private function loadBooks(array $authors): void
+    {
+        if (empty($authors)) {
+            return;
+        }
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $authorsById = [];
+        foreach ($authors as $author) {
+            $authorsById[$author->id] = $author;
+        }
+
+        $rows = (new Query($this->db))
+            ->select(['b.*', 'ba.author_id'])
+            ->from(['b' => 'book'])
+            ->innerJoin(['ba' => 'book_author'], 'ba.book_id = b.id')
+            ->where(['ba.author_id' => array_keys($authorsById)])
+            ->all();
+
+        foreach ($rows as $row) {
+            $authorId = (int)$row['author_id'];
+            unset($row['author_id']);
+            $authorsById[$authorId]->books[] = Book::fromArray($row);
+        }
+    }
+
+    /**
+     * Eager-loads subscriptions for a batch of authors in a single query.
+     *
+     * @param Author[] $authors
+     */
+    private function loadSubscriptions(array $authors): void
+    {
+        if (empty($authors)) {
+            return;
+        }
+
+        $authorsById = [];
+        foreach ($authors as $author) {
+            $authorsById[$author->id] = $author;
+        }
+
+        $rows = (new Query($this->db))
+            ->from('subscription')
+            ->where(['author_id' => array_keys($authorsById)])
+            ->all();
+
+        foreach ($rows as $row) {
+            $subscription = Subscription::fromArray($row);
+            $authorsById[$subscription->authorId]->subscriptions[] = $subscription;
+        }
     }
 }

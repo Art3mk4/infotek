@@ -14,19 +14,6 @@ use Yiisoft\Db\Pgsql\Connection;
 use Yiisoft\Db\Pgsql\Driver;
 use Yiisoft\Db\Cache\SchemaCache;
 use Yiisoft\Db\Migration\MigrationBuilder;
-use Psr\SimpleCache\CacheInterface;
-
-// Simple null cache implementation
-class NullCache implements CacheInterface {
-    public function get(string $key, mixed $default = null): mixed { return $default; }
-    public function set(string $key, mixed $value, null|int|\DateInterval $ttl = null): bool { return true; }
-    public function delete(string $key): bool { return true; }
-    public function clear(): bool { return true; }
-    public function getMultiple(iterable $keys, mixed $default = null): iterable { return []; }
-    public function setMultiple(iterable $values, null|int|\DateInterval $ttl = null): bool { return true; }
-    public function deleteMultiple(iterable $keys): bool { return true; }
-    public function has(string $key): bool { return false; }
-}
 
 $dsn = $_ENV['DB_DSN'] ?? 'pgsql:host=db;dbname=books';
 $username = $_ENV['DB_USER'] ?? 'yii';
@@ -35,7 +22,7 @@ $password = $_ENV['DB_PASSWORD'] ?? 'yiipass';
 try {
     echo "Connecting to database...\n";
     $driver = new Driver($dsn, $username, $password);
-    $schemaCache = new SchemaCache(new NullCache());
+    $schemaCache = new SchemaCache(new App\Shared\NullCache());
     $db = new Connection($driver, $schemaCache);
     echo "Connected!\n\n";
 

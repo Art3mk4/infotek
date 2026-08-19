@@ -5,39 +5,35 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Domain\Subscription;
-use PDO;
+use App\Domain\SubscriptionRepositoryInterface;
+use Yiisoft\Db\Connection\ConnectionInterface;
+use Yiisoft\Db\Exception\IntegrityException;
+use Yiisoft\Db\Query\Query;
 
 /**
  * Subscription repository
  */
-final class SubscriptionRepository
+final class SubscriptionRepository implements SubscriptionRepositoryInterface
 {
     public function __construct(
-        private PDO $db
+        private ConnectionInterface $db
     ) {
     }
 
     public function create(Subscription $subscription): Subscription
     {
-        $stmt = $this->db->prepare(
-            'INSERT INTO subscription (author_id, phone) VALUES (:author_id, :phone)'
-        );
-
         try {
-            $stmt->execute([
-                ':author_id' => $subscription->authorId,
-                ':phone' => $subscription->phone,
-            ]);
-
-            $subscription->id = (int)$this->db->lastInsertId();
-            return $subscription;
-        } catch (\PDOException $e) {
-            // Handle duplicate key error
-            if ($e->getCode() === '23000') {
-                throw new \RuntimeException('Subscription already exists for this author and phone', 409);
-            }
-            throw $e;
+            $this->db->createCommand()->insert('subscription', [
+                'author_id' => $subscription->authorId,
+                'phone' => $subscription->phone,
+            ])->execute();
+        } catch (IntegrityException $e) {
+            throw new \RuntimeException('Subscription already exists for this author and phone', 409, $e);
         }
+
+        $subscription->id = (int)$this->db->getLastInsertID('subscription_id_seq');
+
+        return $subscription;
     }
 
     public function findByAuthorIds(array $authorIds): array
@@ -46,26 +42,21 @@ final class SubscriptionRepository
             return [];
         }
 
-        $placeholders = implode(',', array_fill(0, count($authorIds), '?'));
-        $stmt = $this->db->prepare(
-            "SELECT * FROM subscription WHERE author_id IN ($placeholders)"
-        );
-        $stmt->execute($authorIds);
+        $rows = (new Query($this->db))
+            ->from('subscription')
+            ->where(['author_id' => $authorIds])
+            ->all();
 
-        return array_map(
-            fn($row) => Subscription::fromArray($row),
-            $stmt->fetchAll(PDO::FETCH_ASSOC)
-        );
+        return array_map(static fn(array $row) => Subscription::fromArray($row), $rows);
     }
 
     public function findByAuthorId(int $authorId): array
     {
-        $stmt = $this->db->prepare('SELECT * FROM subscription WHERE author_id = :author_id');
-        $stmt->execute([':author_id' => $authorId]);
+        $rows = (new Query($this->db))
+            ->from('subscription')
+            ->where(['author_id' => $authorId])
+            ->all();
 
-        return array_map(
-            fn($row) => Subscription::fromArray($row),
-            $stmt->fetchAll(PDO::FETCH_ASSOC)
-        );
+        return array_map(static fn(array $row) => Subscription::fromArray($row), $rows);
     }
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Domain\Book;
-use App\Repository\SubscriptionRepository;
+use App\Domain\SubscriptionRepositoryInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
@@ -21,7 +21,7 @@ final class NotificationService
     private const SMSPILOT_URL = 'https://smspilot.ru/api.php';
 
     public function __construct(
-        private SubscriptionRepository $subscriptionRepository,
+        private SubscriptionRepositoryInterface $subscriptionRepository,
         private ClientInterface $httpClient,
         private RequestFactoryInterface $requestFactory,
         private StreamFactoryInterface $streamFactory,

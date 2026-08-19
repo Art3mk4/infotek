@@ -4,136 +4,135 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
-use App\Domain\Book;
 use App\Domain\Author;
-use PDO;
+use App\Domain\Book;
+use App\Domain\BookRepositoryInterface;
+use Yiisoft\Db\Connection\ConnectionInterface;
+use Yiisoft\Db\Query\Query;
 
 /**
  * Book repository
  */
-final class BookRepository
+final class BookRepository implements BookRepositoryInterface
 {
     public function __construct(
-        private PDO $db
+        private ConnectionInterface $db
     ) {
     }
 
     public function findAll(int $limit = 20, int $offset = 0): array
     {
-        $stmt = $this->db->prepare(
-            'SELECT * FROM book ORDER BY created_at DESC LIMIT :limit OFFSET :offset'
-        );
-        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-        $stmt->execute();
+        $rows = (new Query($this->db))
+            ->from('book')
+            ->orderBy(['created_at' => SORT_DESC])
+            ->limit($limit)
+            ->offset($offset)
+            ->all();
 
-        $books = array_map(
-            fn($row) => Book::fromArray($row),
-            $stmt->fetchAll(PDO::FETCH_ASSOC)
-        );
-
-        // Load authors for each book
-        foreach ($books as $book) {
-            $book->authors = $this->findAuthorsByBookId($book->id);
-        }
+        $books = array_map(static fn(array $row) => Book::fromArray($row), $rows);
+        $this->loadAuthors($books);
 
         return $books;
     }
 
     public function findById(int $id): ?Book
     {
-        $stmt = $this->db->prepare('SELECT * FROM book WHERE id = :id');
-        $stmt->execute([':id' => $id]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $row = (new Query($this->db))->from('book')->where(['id' => $id])->one();
 
-        if (!$row) {
+        if ($row === null) {
             return null;
         }
 
         $book = Book::fromArray($row);
-        $book->authors = $this->findAuthorsByBookId($book->id);
+        $this->loadAuthors([$book]);
 
         return $book;
     }
 
     public function create(Book $book): Book
     {
-        $stmt = $this->db->prepare(
-            'INSERT INTO book (title, year, description, isbn, cover_image)
-             VALUES (:title, :year, :description, :isbn, :cover_image)'
-        );
-        $stmt->execute([
-            ':title' => $book->title,
-            ':year' => $book->year,
-            ':description' => $book->description,
-            ':isbn' => $book->isbn,
-            ':cover_image' => $book->coverImage,
-        ]);
+        $this->db->createCommand()->insert('book', [
+            'title' => $book->title,
+            'year' => $book->year,
+            'description' => $book->description,
+            'isbn' => $book->isbn,
+            'cover_image' => $book->coverImage,
+        ])->execute();
 
-        $book->id = (int)$this->db->lastInsertId();
+        $book->id = (int)$this->db->getLastInsertID('book_id_seq');
+
         return $book;
     }
 
     public function update(Book $book): bool
     {
-        $stmt = $this->db->prepare(
-            'UPDATE book SET title = :title, year = :year, description = :description,
-             isbn = :isbn, cover_image = :cover_image WHERE id = :id'
-        );
-        return $stmt->execute([
-            ':id' => $book->id,
-            ':title' => $book->title,
-            ':year' => $book->year,
-            ':description' => $book->description,
-            ':isbn' => $book->isbn,
-            ':cover_image' => $book->coverImage,
-        ]);
+        $affected = $this->db->createCommand()->update(
+            'book',
+            [
+                'title' => $book->title,
+                'year' => $book->year,
+                'description' => $book->description,
+                'isbn' => $book->isbn,
+                'cover_image' => $book->coverImage,
+            ],
+            ['id' => $book->id],
+        )->execute();
+
+        return $affected > 0;
     }
 
     public function delete(int $id): bool
     {
-        $stmt = $this->db->prepare('DELETE FROM book WHERE id = :id');
-        return $stmt->execute([':id' => $id]);
+        return $this->db->createCommand()->delete('book', ['id' => $id])->execute() > 0;
     }
 
     public function linkAuthors(int $bookId, array $authorIds): void
     {
-        // First, remove existing links
-        $stmt = $this->db->prepare('DELETE FROM book_author WHERE book_id = :book_id');
-        $stmt->execute([':book_id' => $bookId]);
+        $this->db->createCommand()->delete('book_author', ['book_id' => $bookId])->execute();
 
-        // Then add new links
-        if (!empty($authorIds)) {
-            $stmt = $this->db->prepare(
-                'INSERT INTO book_author (book_id, author_id) VALUES (:book_id, :author_id)'
-            );
-            foreach ($authorIds as $authorId) {
-                $stmt->execute([
-                    ':book_id' => $bookId,
-                    ':author_id' => $authorId,
-                ]);
-            }
+        if (empty($authorIds)) {
+            return;
         }
-    }
 
-    public function findAuthorsByBookId(int $bookId): array
-    {
-        $stmt = $this->db->prepare(
-            'SELECT a.* FROM author a
-             INNER JOIN book_author ba ON ba.author_id = a.id
-             WHERE ba.book_id = :book_id'
-        );
-        $stmt->execute([':book_id' => $bookId]);
-
-        return array_map(
-            fn($row) => Author::fromArray($row),
-            $stmt->fetchAll(PDO::FETCH_ASSOC)
-        );
+        $this->db->createCommand()->batchInsert(
+            'book_author',
+            ['book_id', 'author_id'],
+            array_map(static fn(int $authorId) => [$bookId, $authorId], $authorIds),
+        )->execute();
     }
 
     public function count(): int
     {
-        $stmt = $this->db->query('SELECT COUNT(*) FROM book');
-        return (int)$stmt->fetchColumn();
+        return (new Query($this->db))->from('book')->count();
+    }
+
+    /**
+     * Eager-loads authors for a batch of books in a single query, avoiding N+1 selects.
+     *
+     * @param Book[] $books
+     */
+    private function loadAuthors(array $books): void
+    {
+        if (empty($books)) {
+            return;
+        }
+
+        $booksById = [];
+        foreach ($books as $book) {
+            $booksById[$book->id] = $book;
+        }
+
+        $rows = (new Query($this->db))
+            ->select(['a.*', 'ba.book_id'])
+            ->from(['a' => 'author'])
+            ->innerJoin(['ba' => 'book_author'], 'ba.author_id = a.id')
+            ->where(['ba.book_id' => array_keys($booksById)])
+            ->all();
+
+        foreach ($rows as $row) {
+            $bookId = (int)$row['book_id'];
+            unset($row['book_id']);
+            $booksById[$bookId]->authors[] = Author::fromArray($row);
+        }
     }
 }

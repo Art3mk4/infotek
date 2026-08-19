@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Domain\Book;
-use App\Repository\BookRepository;
+use App\Domain\BookRepositoryInterface;
 use App\Service\NotificationService;
 use App\ValueObject\CreateBookData;
 use App\ValueObject\UpdateBookData;
@@ -17,7 +17,7 @@ use App\ValueObject\UpdateBookData;
 final class BookService
 {
     public function __construct(
-        private BookRepository $bookRepository,
+        private BookRepositoryInterface $bookRepository,
         private NotificationService $notificationService,
     ) {
     }

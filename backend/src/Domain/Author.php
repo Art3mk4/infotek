@@ -12,6 +12,10 @@ final class Author
     public function __construct(
         public ?int $id = null,
         public string $fullName = '',
+        /** @var Book[] */
+        public array $books = [],
+        /** @var Subscription[] */
+        public array $subscriptions = [],
     ) {
     }
 

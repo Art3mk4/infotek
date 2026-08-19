@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Domain\User;
-use App\Repository\UserRepository;
+use App\Domain\UserRepositoryInterface;
 use App\Shared\JwtHelper;
 use App\ValueObject\LoginCredentials;
 
@@ -16,7 +16,7 @@ use App\ValueObject\LoginCredentials;
 final class AuthService
 {
     public function __construct(
-        private UserRepository $userRepository,
+        private UserRepositoryInterface $userRepository,
         private JwtHelper $jwtHelper,
     ) {
     }

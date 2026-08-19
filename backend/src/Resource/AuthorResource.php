@@ -15,6 +15,8 @@ final class AuthorResource implements ResourceInterface
         return [
             'id' => $this->author->id,
             'full_name' => $this->author->fullName,
+            'books' => BookResource::collection($this->author->books),
+            'subscriptions' => SubscriptionResource::collection($this->author->subscriptions),
         ];
     }
 

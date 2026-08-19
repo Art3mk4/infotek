@@ -10,19 +10,24 @@ if (file_exists(__DIR__ . '/../.env')) {
 
 $container = new App\Shared\Container();
 
-$container->set(PDO::class, static function (): PDO {
+$container->set(\Yiisoft\Db\Connection\ConnectionInterface::class, static function (): \Yiisoft\Db\Connection\ConnectionInterface {
     $host = $_ENV['DB_HOST'] ?? 'db';
     $dbname = $_ENV['DB_NAME'] ?? 'books';
     $user = $_ENV['DB_USER'] ?? 'yii';
     $password = $_ENV['DB_PASSWORD'] ?? 'yiipass';
 
-    $pdo = new PDO("pgsql:host={$host};dbname={$dbname}", $user, $password, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    ]);
+    $driver = new \Yiisoft\Db\Pgsql\Driver("pgsql:host={$host};dbname={$dbname}", $user, $password);
+    $schemaCache = new \Yiisoft\Db\Cache\SchemaCache(new App\Shared\NullCache());
 
-    return $pdo;
+    return new \Yiisoft\Db\Pgsql\Connection($driver, $schemaCache);
 });
+
+// The container only autowires concrete classes (see Container::has()), so repository
+// interfaces need an explicit binding to their infrastructure implementation.
+$container->set(App\Domain\BookRepositoryInterface::class, static fn (App\Shared\Container $c) => $c->get(App\Repository\BookRepository::class));
+$container->set(App\Domain\AuthorRepositoryInterface::class, static fn (App\Shared\Container $c) => $c->get(App\Repository\AuthorRepository::class));
+$container->set(App\Domain\SubscriptionRepositoryInterface::class, static fn (App\Shared\Container $c) => $c->get(App\Repository\SubscriptionRepository::class));
+$container->set(App\Domain\UserRepositoryInterface::class, static fn (App\Shared\Container $c) => $c->get(App\Repository\UserRepository::class));
 
 $container->set(\Psr\Http\Client\ClientInterface::class, static function (): \Psr\Http\Client\ClientInterface {
     return new GuzzleHttp\Client(['timeout' => 5.0, 'http_errors' => false]);
@@ -46,7 +51,7 @@ $container->set(App\Shared\JwtHelper::class, static function (): App\Shared\JwtH
 
 $container->set(App\Service\NotificationService::class, static function (App\Shared\Container $c): App\Service\NotificationService {
     return new App\Service\NotificationService(
-        $c->get(App\Repository\SubscriptionRepository::class),
+        $c->get(App\Domain\SubscriptionRepositoryInterface::class),
         $c->get(\Psr\Http\Client\ClientInterface::class),
         $c->get(\Psr\Http\Message\RequestFactoryInterface::class),
         $c->get(\Psr\Http\Message\StreamFactoryInterface::class),

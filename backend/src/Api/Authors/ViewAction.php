@@ -20,7 +20,7 @@ final class ViewAction
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
         $id = (int)$request->getAttribute('id');
-        $author = $this->authorService->getById($id);
+        $author = $this->authorService->getByIdWithRelations($id);
 
         if (!$author) {
             return $this->errorResponse('Author not found', 404);
