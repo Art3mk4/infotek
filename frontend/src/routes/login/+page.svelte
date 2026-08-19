@@ -1,5 +1,6 @@
 <script>
 	import { enhance } from '$app/forms';
+	import { withLoading } from '$lib/formEnhance.js';
 
 	export let form;
 
@@ -16,13 +17,7 @@
 		<h1>Login</h1>
 		<p class="subtitle">Access the catalog admin panel</p>
 
-		<form method="POST" use:enhance={() => {
-			isSubmitting = true;
-			return async ({ update }) => {
-				await update();
-				isSubmitting = false;
-			};
-		}}>
+		<form method="POST" use:enhance={withLoading((v) => (isSubmitting = v))}>
 			<div class="form-group">
 				<label for="username">Username</label>
 				<input

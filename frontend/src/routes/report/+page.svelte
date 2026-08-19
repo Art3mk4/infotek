@@ -1,5 +1,7 @@
 <script>
 	import { goto } from '$app/navigation';
+	import PageHeader from '$lib/components/PageHeader.svelte';
+	import ErrorMessage from '$lib/components/ErrorMessage.svelte';
 
 	export let data;
 	$: ({ year, authors, error } = data);
@@ -25,74 +27,61 @@
 	<meta name="description" content={`Top 10 authors by books published in ${year}`} />
 </svelte:head>
 
-<div class="page-header">
-	<h1>📊 Top Authors Report</h1>
-	<p>Most prolific authors by year</p>
-</div>
+<div class="page">
+	<PageHeader title="📊 Top Authors Report" subtitle="Most prolific authors by year" />
 
-<div class="year-selector">
-	<label for="year">Select Year:</label>
-	<select id="year" bind:value={selectedYear} on:change={changeYear}>
-		{#each generateYearOptions() as y}
-			<option value={y}>{y}</option>
-		{/each}
-	</select>
-</div>
-
-{#if error}
-	<div class="error-message">
-		<p>⚠️ {error}</p>
-	</div>
-{/if}
-
-{#if authors.length > 0}
-	<div class="report-content">
-		<h2>Top 10 Authors in {year}</h2>
-		<div class="leaderboard">
-			{#each authors as author, index}
-				<div class="rank-item">
-					<div class="rank-number">
-						{#if index === 0}
-							🥇
-						{:else if index === 1}
-							🥈
-						{:else if index === 2}
-							🥉
-						{:else}
-							<span class="number">{index + 1}</span>
-						{/if}
-					</div>
-					<div class="rank-info">
-						<h3>
-							<a href="/authors/{author.id}">{author.full_name}</a>
-						</h3>
-						<p class="books-count">
-							{author.books_count} {author.books_count === 1 ? 'book' : 'books'} published
-						</p>
-					</div>
-					<div class="rank-badge">
-						{author.books_count}
-					</div>
-				</div>
+	<div class="year-selector">
+		<label for="year">Select Year:</label>
+		<select id="year" bind:value={selectedYear} on:change={changeYear}>
+			{#each generateYearOptions() as y (y)}
+				<option value={y}>{y}</option>
 			{/each}
+		</select>
+	</div>
+
+	<ErrorMessage message={error} />
+
+	{#if authors.length > 0}
+		<div class="report-content">
+			<h2>Top 10 Authors in {year}</h2>
+			<div class="leaderboard">
+				{#each authors as author, index (author.id)}
+					<div class="rank-item">
+						<div class="rank-number">
+							{#if index === 0}
+								🥇
+							{:else if index === 1}
+								🥈
+							{:else if index === 2}
+								🥉
+							{:else}
+								<span class="number">{index + 1}</span>
+							{/if}
+						</div>
+						<div class="rank-info">
+							<h3>
+								<a href="/authors/{author.id}">{author.full_name}</a>
+							</h3>
+							<p class="books-count">
+								{author.books_count}
+								{author.books_count === 1 ? 'book' : 'books'} published
+							</p>
+						</div>
+						<div class="rank-badge">
+							{author.books_count}
+						</div>
+					</div>
+				{/each}
+			</div>
 		</div>
-	</div>
-{:else}
-	<div class="empty-state">
-		<p class="empty-state__text">📚 No books published in {year}</p>
-	</div>
-{/if}
+	{:else}
+		<div class="empty-state">
+			<p class="empty-state__text">📚 No books published in {year}</p>
+		</div>
+	{/if}
+</div>
 
 <style>
-	.page-header {
-		margin-bottom: 2rem;
-		text-align: center;
-	}
-
-	.page-header p {
-		color: var(--color-muted);
-	}
-
 	.year-selector {
 		max-width: 300px;
 		margin: 0 auto 3rem;
@@ -115,15 +104,6 @@
 		color: var(--color-ink);
 		font-size: 1rem;
 		cursor: pointer;
-	}
-
-	.error-message {
-		background: rgba(255, 107, 107, 0.1);
-		border: 1px solid rgba(255, 107, 107, 0.3);
-		border-radius: 0.5rem;
-		padding: 1rem;
-		margin-bottom: 2rem;
-		text-align: center;
 	}
 
 	.report-content {
@@ -151,7 +131,9 @@
 		background: #fff;
 		border: 1px solid rgba(43, 33, 24, 0.1);
 		border-radius: 2px;
-		transition: transform 0.2s ease, box-shadow 0.2s ease;
+		transition:
+			transform 0.2s ease,
+			box-shadow 0.2s ease;
 	}
 
 	.rank-item:hover {

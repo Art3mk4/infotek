@@ -1,11 +1,14 @@
 <script>
 	import { enhance } from '$app/forms';
+	import PageHeader from '$lib/components/PageHeader.svelte';
+	import ErrorMessage from '$lib/components/ErrorMessage.svelte';
+	import DeleteForm from '$lib/components/DeleteForm.svelte';
+	import { withLoading } from '$lib/formEnhance.js';
 
 	export let data;
 	export let form;
 
 	let isSubmitting = false;
-	let isDeleting = false;
 	$: ({ author } = data);
 </script>
 
@@ -15,27 +18,26 @@
 </svelte:head>
 
 <div class="page">
-	<header class="page__header">
-		<h1 class="page__title">Edit Author</h1>
-		<p class="page__subtitle">{author.full_name}</p>
-	</header>
+	<PageHeader title="Edit Author" subtitle={author.full_name} />
 
-	{#if form?.error}
-		<div class="message message--error">
-			<p>⚠️ {form.error}</p>
-		</div>
-	{/if}
+	<ErrorMessage message={form?.error} />
 
-	<form class="form" method="POST" action="?/update" use:enhance={() => {
-		isSubmitting = true;
-		return async ({ update }) => {
-			await update();
-			isSubmitting = false;
-		};
-	}}>
+	<form
+		class="form"
+		method="POST"
+		action="?/update"
+		use:enhance={withLoading((v) => (isSubmitting = v))}
+	>
 		<div class="form-group">
 			<label for="full_name">Full Name</label>
-			<input type="text" id="full_name" name="full_name" value={author.full_name} required disabled={isSubmitting} />
+			<input
+				type="text"
+				id="full_name"
+				name="full_name"
+				value={author.full_name}
+				required
+				disabled={isSubmitting}
+			/>
 		</div>
 
 		<div class="form-actions">
@@ -46,44 +48,5 @@
 		</div>
 	</form>
 
-	<form class="delete-form" method="POST" action="?/delete" use:enhance={() => {
-		isDeleting = true;
-		return async ({ update }) => {
-			await update();
-			isDeleting = false;
-		};
-	}}>
-		<button type="submit" class="btn btn--danger" disabled={isDeleting}>
-			{isDeleting ? 'Deleting...' : 'Delete Author'}
-		</button>
-	</form>
+	<DeleteForm label="Author" />
 </div>
-
-<style>
-	.form {
-		max-width: 700px;
-		background: #fff;
-		padding: var(--space-lg);
-		border: 1px solid rgba(43, 33, 24, 0.1);
-		border-radius: 2px;
-	}
-
-	.form-actions {
-		display: flex;
-		gap: var(--space-md);
-		margin-top: var(--space-lg);
-	}
-
-	.delete-form {
-		max-width: 700px;
-		margin-top: var(--space-lg);
-		padding-top: var(--space-lg);
-		border-top: 1px solid rgba(43, 33, 24, 0.1);
-	}
-
-	.btn--danger {
-		background: #c84b31;
-		border-color: #c84b31;
-		color: #fff;
-	}
-</style>

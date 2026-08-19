@@ -1,11 +1,19 @@
 <script>
 	import BookCard from '$lib/components/BookCard.svelte';
-	import Button from '$lib/components/Button.svelte';
+	import PageHeader from '$lib/components/PageHeader.svelte';
+	import ErrorMessage from '$lib/components/ErrorMessage.svelte';
 
 	export let data;
 	$: ({ books, pagination, error } = data);
 
-	function getPaginationLinks() {
+	// A plain function called as `{#each getPaginationLinks() as link}` isn't reactive:
+	// Svelte only tracks dependencies it can see directly in the template expression, and
+	// `pagination` is only referenced inside the function body, not the call site. Computing
+	// it here as `$:` makes the dependency on `pagination` explicit, so it recomputes on
+	// every client-side navigation (not just full page loads).
+	$: paginationLinks = getPaginationLinks(pagination);
+
+	function getPaginationLinks(pagination) {
 		const links = [];
 		const currentPage = pagination.page;
 		const totalPages = pagination.totalPages;
@@ -36,29 +44,24 @@
 </svelte:head>
 
 <div class="page">
-	<header class="page__header">
-		<h1 class="page__title">Browse Books</h1>
-		<p class="page__subtitle text--muted">
-			{books.length} of {pagination.total} cataloged
-		</p>
-	</header>
+	<PageHeader
+		title="Browse Books"
+		subtitle="{books.length} of {pagination.total} cataloged"
+		muted
+	/>
 
-	{#if error}
-		<div class="message message--error">
-			<p>⚠️ {error}</p>
-		</div>
-	{/if}
+	<ErrorMessage message={error} />
 
 	{#if books.length > 0}
 		<div class="grid">
-			{#each books as book}
+			{#each books as book (book.id)}
 				<BookCard {book} />
 			{/each}
 		</div>
 
 		{#if pagination.totalPages > 1}
 			<nav class="pagination">
-				{#each getPaginationLinks() as link}
+				{#each paginationLinks as link (link.label + link.page)}
 					{#if link.disabled}
 						<span class="pagination__item pagination__item--disabled">{link.label}</span>
 					{:else if link.current}
@@ -77,21 +80,6 @@
 </div>
 
 <style>
-	.page__header {
-		margin-bottom: var(--space-xl);
-		border-bottom: 2px solid rgba(43, 33, 24, 0.1);
-		padding-bottom: var(--space-md);
-	}
-
-	.page__title {
-		margin-bottom: var(--space-xs);
-	}
-
-	.page__subtitle {
-		font-size: 1.1rem;
-		margin: 0;
-	}
-
 	.pagination {
 		display: flex;
 		justify-content: center;
@@ -130,5 +118,4 @@
 			border-bottom: none;
 		}
 	}
-
 </style>
